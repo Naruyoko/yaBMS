@@ -195,3 +195,90 @@ Bms.prototype.Lng=function(){
 Bms.Lng=function(M){
   return M.xs();
 }
+
+
+Bms.prototype.getNonzeroHeight=function (){
+  var ys=this.ys();
+  while (ys>0){
+    for (var i=0;i<this.xs()&&!this.s[i][ys-1];i++);
+    if (i!=this.xs()) break;
+    ys--;
+  }
+  return ys;
+}
+Bms.prototype.toStringWithEmptyRowRemoved=function(){
+  var ys=this.getNonzeroHeight();
+  var str="";
+  for(var c=0;c<this.xs();c++){
+    str+="(";
+    for(var r=0;r<ys;r++){
+      str += this.s[c][r]||"0";
+      if(r!=ys-1)str += ",";
+    }
+    str+=")";
+  }
+  if(this.b!==undefined){
+    str+="["+this.b+"]";
+  }
+  return str;
+}
+Bms.prototype.compare=Bms.prototype.cmp=function (other){
+  if (!(other instanceof Bms)) other=new Bms(other);
+  var xs=Math.min(this.xs(),other.xs());
+  var ys=Math.max(this.getNonzeroHeight(),other.getNonzeroHeight())
+  for (var i=0;i<xs;i++){
+    for (var j=0;j<ys;j++){
+      if ((this.s[i][j]||0)<(other.s[i][j]||0)) return -1;
+      if ((this.s[i][j]||0)>(other.s[i][j]||0)) return 1;
+    }
+  }
+  if (this.xs()<other.xs()) return -1;
+  if (this.xs()>other.xs()) return 1;
+  return 0;
+}
+Bms.compare=Bms.cmp=function (x,y){
+  if (!(x instanceof Bms)) x=new Bms(x);
+  return x.cmp(y);
+}
+Bms.prototype.equal=Bms.prototype.eq=function (other){
+  return this.cmp(other)==0;
+}
+Bms.equal=Bms.eq=function (x,y){
+  if (!(x instanceof Bms)) x=new Bms(x);
+  return x.eq(y);
+}
+Bms.prototype.notEqual=Bms.prototype.neq=function (other){
+  return this.cmp(other)!=0;
+}
+Bms.notEqual=Bms.neq=function (x,y){
+  if (!(x instanceof Bms)) x=new Bms(x);
+  return x.neq(y);
+}
+Bms.prototype.lessThan=Bms.prototype.lt=function (other){
+  return this.cmp(other)<0;
+}
+Bms.lessThan=Bms.lt=function (x,y){
+  if (!(x instanceof Bms)) x=new Bms(x);
+  return x.lt(y);
+}
+Bms.prototype.lessThanOrEqual=Bms.prototype.lte=function (other){
+  return this.cmp(other)<=0;
+}
+Bms.lessThanOrEqual=Bms.lte=function (x,y){
+  if (!(x instanceof Bms)) x=new Bms(x);
+  return x.lte(y);
+}
+Bms.prototype.greaterThan=Bms.prototype.gt=function (other){
+  return this.cmp(other)>0;
+}
+Bms.greaterThan=Bms.gt=function (x,y){
+  if (!(x instanceof Bms)) x=new Bms(x);
+  return x.gt(y);
+}
+Bms.prototype.greaterThanOrEqual=Bms.prototype.gte=function (other){
+  return this.cmp(other)>=0;
+}
+Bms.greaterThanOrEqual=Bms.gte=function (x,y){
+  if (!(x instanceof Bms)) x=new Bms(x);
+  return x.gte(y);
+}
