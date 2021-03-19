@@ -102,7 +102,7 @@ Bms.prototype.getAscension=function(){
     A[0][y]=1; /* bad root is ascended */
     for(var x=1;x<bs;x++){ /* x=column index of bad part */
       var p=this.getParent(x+r,y);
-      if(p!=-1 && A[p-r][y]==1) A[x][y]=1; /* propagate from parent */
+      if(p-r>=0 && A[p-r][y]==1) A[x][y]=1; /* propagate from parent */
     }
   }
   return A;
@@ -207,7 +207,7 @@ Bms.prototype.getNonzeroHeight=function (){
   return ys;
 }
 Bms.prototype.toStringWithEmptyRowRemoved=function(){
-  var ys=this.getNonzeroHeight();
+  var ys=this.getNonzeroHeight()||1;
   var str="";
   for(var c=0;c<this.xs();c++){
     str+="(";

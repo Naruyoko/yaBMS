@@ -5,7 +5,8 @@
   <meta http-equiv="Content-type" content="text/html; charset=sjis">
   <meta http-equiv="Content-Style-Type" content="text/css">
   <style><!--
-    body{font-family:Segoe UI}
+    *{max-height:999999px;}
+    body{font-family:Segoe UI;position:relative;}
     a{color:black;border-style:none;text-decoration:underline}
     a:link{color:#0000FF;border-style:none;text-decoration:underline}
     a:visited{color:#0000FF;border-style:none;text-decoration:underline}
@@ -19,6 +20,24 @@
     .buttoncontainer{float:right}
     .nodebutton{}
     .childrencontainer{}
+    #maincontainer{
+      float:none;
+      overflow:hidden;
+    }
+    #rightsidecontainer{
+      position:relative;
+      float:right;
+    }
+    #rightsidecontent{
+      background:rgba(128,128,128,0.5);
+      padding:4px;
+    }
+    #rightsidetogglebutton{
+      position:absolute;
+      right:100%;
+      margin-right:2px;
+    }
+    .analysiscontent{margin-right:20px;}
   -->
   </style>
   <script type="text/javascript" src="./bms.js"></script>
@@ -27,10 +46,25 @@
   <script type="text/javascript" src="./tree.js"></script>
 </head>
 <body>
-  <h1>tree expansion</h1>
-  <form id=form0>
+  <div id="rightsidecontainer">
+    <input id="rightsidetogglebutton" type="button" value="!" onclick="javascript:toggleRightsideMenu()">
+    <div id="rightsidecontent">
+      <p>
+        Search by matrix:<br>
+        <input id="searchByMatrixInput" type="text" value="(0,0,0)(1,1,1)(2,1,0)(1,1,1)"><br>
+        <input type="button" value="Search" onclick="javascript:searchByMatrix()">
+      </p>
+      <p>
+        Search by index:<br>
+        <input id="searchByIndexInput" type="text" value="3,2,1,1,0,1,1,1,1,1,0,0,1,1,0,0,1,0"><br>
+        <input type="button" value="Search" onclick="javascript:searchByIndex()">
+      </p>
+    </div>
+  </div>
+  <div id="maincontainer">
+    <h1>tree expansion</h1>
     <div id=treecontainer></div>
-  </form>
+  </div>
 </body>
 </html>
 
