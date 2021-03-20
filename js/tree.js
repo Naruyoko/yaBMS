@@ -382,6 +382,8 @@ var searchByMatrix=function (matrix){
   var path;
   if (matrix==Node.LEAST){
     path=[0,0,0];
+  }else if (/^\(0(,0)*\)\(1(,1)*\)$/.test(matrix)){
+    path=[matrix.split("(")[2].length/2-1];
   }else{
     var lastMatrix=Node.LIMIT;
     path=[];
