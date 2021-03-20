@@ -16,7 +16,7 @@
     .tdbutton{border-width:1px;border-style:solid;border-color:white;height:30px;width:30px}
     hr{border-style:solid}
     .console{font-family:MS Gothic;color:white;background-color:black}
-    .node{border:1px solid black;padding:2px 1px;min-width:100px;}
+    .node{border:1px solid black;padding:0px 0px;margin:1px 1px;min-width:100px;}
     .buttoncontainer{float:right}
     .nodebutton{}
     .childrencontainer{}
@@ -38,6 +38,13 @@
       margin-right:2px;
     }
     .analysiscontent{margin-right:20px;}
+    table.nodeselfcontent{width:100%;}
+    .maincell{width:30%;}
+    .analysiscell{max-width:100%;}
+    .analysisul{margin:0;}
+    .buttonscell{white-space:nowrap;width:1px;}
+    .highlighted{animation-name:highlight;animation-duration:0.4s;animation-iteration-count:infinite;}
+    @keyframes highlight{50%{background-color:gold;}}
   -->
   </style>
   <script type="text/javascript" src="./bms.js"></script>
