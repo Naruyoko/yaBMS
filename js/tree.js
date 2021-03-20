@@ -64,17 +64,20 @@ Node.createDOM=function (id,matrix){
 
   if (matrix&&matrix!=Node.LEAST){
     var inputplus=document.createElement('input');
+    inputplus.setAttribute("id","addbutton"+id);
     inputplus.setAttribute("type","button");
     inputplus.setAttribute("value","expand");
     inputplus.setAttribute("onclick","javascript:Node.nodes["+id+"].addChild();");
     inputplus.setAttribute("class","nodebutton");
+    inputplus.setAttribute("style","");
     buttonscell.appendChild(inputplus);
 
     var inputminus=document.createElement('input');
+    inputminus.setAttribute("id","removebutton"+id);
     inputminus.setAttribute("type","button");
     inputminus.setAttribute("value","retract");
     inputminus.setAttribute("onclick","javascript:Node.nodes["+id+"].removeChild();");
-    inputminus.setAttribute("class","nodebutton");
+    inputminus.setAttribute("class","nodebutton unavailable");
     buttonscell.appendChild(inputminus);
   }
 
@@ -99,6 +102,7 @@ Node.createDOM=function (id,matrix){
 }
 Node.prototype.addChild=function (){
   if (!this.matrix||this.matrix==Node.LEAST) return;
+  var oldtop=document.getElementById("content"+this.id).getBoundingClientRect().top;
   if (this.childrenN==this.children.length){
     var isStandardPath,expansion;
     if (this.matrix==Node.LIMIT){
@@ -134,14 +138,29 @@ Node.prototype.addChild=function (){
     this.children[this.childrenN].createUpdateTimeout();
   }
   document.getElementById("children"+this.id).appendChild(this.children[this.childrenN].node);
-  window.scrollBy(0,this.children[this.childrenN].node.offsetHeight);
+  var newtop=document.getElementById("content"+this.id).getBoundingClientRect().top;
+  window.scrollBy(0,newtop-oldtop);
   this.childrenN++;
+  if (this.childrenN==1&&/\(0(,0)*\)$/.test(this.matrix)){
+    document.getElementById("addbutton"+this.id).classList.add("unavailable");
+  }
+  if (this.childrenN==1){
+    document.getElementById("removebutton"+this.id).classList.remove("unavailable");
+  }
 }
 Node.prototype.removeChild=function (){
   if (this.childrenN<=0) return;
+  var oldtop=document.getElementById("content"+this.id).getBoundingClientRect().top;
   this.childrenN--;
-  window.scrollBy(0,-this.children[this.childrenN].node.offsetHeight);
   document.getElementById("children"+this.id).removeChild(this.children[this.childrenN].node);
+  var newtop=document.getElementById("content"+this.id).getBoundingClientRect().top;
+  window.scrollBy(0,newtop-oldtop);
+  if (this.childrenN==0&&/\(0(,0)*\)$/.test(this.matrix)){
+    document.getElementById("addbutton"+this.id).classList.remove("unavailable");
+  }
+  if (this.childrenN==0){
+    document.getElementById("removebutton"+this.id).classList.add("unavailable");
+  }
 }
 Node.prototype.toggleAnalysis=function (){
   var analysisp=document.getElementById("analysiscontainer"+this.id);
