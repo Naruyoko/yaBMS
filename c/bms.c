@@ -808,7 +808,7 @@ int checklooprec(Bm *bm0, Bm *bm1, int depth, int lastcommand, char *str, eBMS_V
       }
       if(isfound){
         amount++;
-        char *str2=malloc(strlen(str)+6);
+        char *str2=malloc(strlen(str)+10);
         sprintf(str2, "%s<-%d>",str,amount);
         ret=checklooprec_sub(bm0, bm2, str2, depth, 2, ver, detail);
         if(str2)free(str2);
@@ -822,10 +822,10 @@ int checklooprec(Bm *bm0, Bm *bm1, int depth, int lastcommand, char *str, eBMS_V
   }
 
   /* expand by [n] */
-  for(int k=1;k<=2;k++){
+  for(int k=1;k<=1;k++){
     Bm *bm11=clone(bm1);
     bm11->bs=1;
-    bm11->b[0]=1;
+    bm11->b[0]=k;
     Bm *bm2=expand(bm11,ver,0);
     char *str2=malloc(strlen(str)+4);
     sprintf(str2, "%s[%d]",str,k);
