@@ -279,6 +279,7 @@ Bm *parse(char *str){
     switch(*c){
       case '(':
         ys=0;
+        *wp=0;
       break;
       case '0': case '1': case '2': case '3': case '4': case '5':
       case '6': case '7': case '8': case '9': 
@@ -827,7 +828,7 @@ int checklooprec(Bm *bm0, Bm *bm1, int depth, int lastcommand, char *str, eBMS_V
     bm11->b[0]=1;
     Bm *bm2=expand(bm11,ver,0);
     char *str2=malloc(strlen(str)+4);
-    sprintf(str2, "%s[1]",str);
+    sprintf(str2, "%s[%d]",str,k);
     ret=checklooprec_sub(bm0, bm2, str2, depth, 3, ver, detail);
     if(str2)free(str2);
     if(bm2)free(bm2);
