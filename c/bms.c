@@ -587,7 +587,7 @@ int compmat(Bm *a, Bm *b){
     return ret;
   }else{
     /* lexicographical compare */
-    int n=a->xs*a->ys;
+    int n=(a->xs<b->xs?a->xs:b->xs)*a->ys;
     for(int i=0;i<n;i++){
       if(*pa>*pb)return +1;
       if(*pa<*pb)return -1;
