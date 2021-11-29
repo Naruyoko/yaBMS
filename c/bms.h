@@ -68,3 +68,36 @@ int compmat(Bm* a, Bm* b);
 int isstd(Bm *b, eBMS_VER ver, int detail);
 int checkloop(Bm *b, eBMS_VER ver, int detail);
 int checklooprec(Bm *b0, Bm *b1, int depth, int lastcommand, char *str, eBMS_VER ver, int detail);
+
+/**
+ * @brief Holds the types of the decrements used to check for loops
+ */
+typedef enum{
+  NONE, /* No previous decrements */
+  CUT, /* simple cut -- [0]^n */
+  REDUCE, /* reduce in same length -- <-n> => ([1][0]^a_k)_k=0^n */
+  EXPAND /* expand by [n] */
+}commandType;
+/**
+ * @brief Holds the information about the matrices to be checked for in the process of checking for a loop
+ */
+typedef struct{
+  Bm *bm; /* The matrix */
+  int depth; /* The remaining depth for this item to be checked for */
+  char *str; /* The string representing the relation of this item to the initial matrix */
+  commandType lastcommand;
+}loopitem;
+
+/** @fn loopitem *checkloopnewrec(Bm *bm0, Bm *bm1, int maxdepth, eBMS_VER ver, int detail)
+ * @brief Checks if the given matrix has a loop within the given range and depth.
+ * 
+ * @param bm0 (starting) lower bound
+ * @param bm1 upper bound, i.e. the initial matrix
+ * @param maxdepth maximum number of steps to expand
+ * @param ver version of BMS
+ * @param detail if true, prints the details of the process
+ * @param outputevery outputs once every this many lines
+ * @return loopitem* the loopitem that caused the loop, or NULL if no loop was found or run out of memory
+ */
+loopitem *checkloopnewrec(Bm *bm0, Bm *bm1, int maxdepth, eBMS_VER ver, int detail, int outputevery);
+loopitem *movePointer(loopitem **pL,loopitem **pL_cur,loopitem **pL_end,unsigned int *pL_size);

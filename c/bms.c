@@ -10,6 +10,7 @@ int main(int argc, char **argv){
   eBMS_VER ver=eBMS_VER_4;
   int flagstd=0;
   int flagloop=0;
+  int flagloopnew=0;  
   int flagcmp=0;
   int flagexp=0;
   int flagrec=0;
@@ -17,15 +18,16 @@ int main(int argc, char **argv){
   int flaghelp=0;
   /* check option */
   char arg;
-  while((arg=getopt(argc, argv, "v:hdeslcr")) != -1){
+  while((arg=getopt(argc, argv, "v:hdeslkcr")) != -1){
     switch(arg){
-      case 'h': flaghelp = 1; break;
-      case 'c': flagcmp  = 1; break;
-      case 'd': detail   = 1; break;
-      case 'l': flagloop = 1; break;
-      case 'e': flagexp  = 1; break;
-      case 'r': flagrec  = 1; break;
-      case 's': flagstd  = 1; break;
+      case 'h': flaghelp    = 1; break;
+      case 'c': flagcmp     = 1; break;
+      case 'd': detail      = 1; break;
+      case 'l': flagloop    = 1; break;
+      case 'k': flagloopnew = 1; break;
+      case 'e': flagexp     = 1; break;
+      case 'r': flagrec     = 1; break;
+      case 's': flagstd     = 1; break;
       case 'v':
         if(
           strcmp(optarg,"4")  ==0 ||
@@ -80,7 +82,7 @@ int main(int argc, char **argv){
     if(detail) printcopyright();
     return EXIT_SUCCESS;
   }
-  if(!flagloop&&!flagexp&&!flagstd&&!flagcmp){ /* there is no command in option */
+  if(!flagloop&&!flagloopnew&&!flagexp&&!flagstd&&!flagcmp){ /* there is no command in option */
     flagexp=1; /* recognize expansion command */
   }
 
@@ -207,6 +209,55 @@ int main(int argc, char **argv){
       }
       if(bm0)free(bm0);
       return EXIT_SUCCESS;
+    }
+  }
+  /* check loop experimental algorithm */
+  if(flagloopnew){
+    if(flagrec){
+      if(argc!=optind+2&&argc!=optind+3&&argc!=optind+4){
+        printf("error: input is not enough.\n");
+        printf("usage: ./bms -kr bms0 bms1\n");
+        printf("       ./bms -kr bms0 bms1 [depth]\n");
+        printf("       ./bms -kdr bms0 bms1 [depth] [outputevery]\n");
+        return EXIT_FAILURE;
+      }
+      Bm *bm0=parse(argv[optind+0]);
+      Bm *bm1=parse(argv[optind+1]);
+      int depth=3;
+      if(argc>=optind+3){
+        depth=atoi(argv[optind+2]);
+      }
+      int outputevery=1;
+      if(argc>=optind+4){
+        outputevery=atoi(argv[optind+3]);
+      }
+      if(detail)printf("version : %s\n",version_string[ver]);
+      char *str=bm2str(bm1);
+      loopitem* ret=checkloopnewrec(bm0, bm1, depth, ver, detail, outputevery);
+      if(str)free(str);
+      if(detail){
+        printf("%s",ret?"loop!\n":"No loops were found.\n");
+      }else{
+        printf("%s",ret?"1":"0");
+      }
+      if(ret){
+        printf("At %s = ",ret->str);
+        ret->bm->bs=0;
+        printbm(ret->bm);
+      }
+      fflush(stdout);
+      if(bm0)free(bm0);
+      if(bm1)free(bm1);
+      if(ret){
+        if(ret->bm)free(ret->bm);
+        if(ret->str)free(ret->str);
+        free(ret);
+      }
+      return EXIT_SUCCESS;
+    }else{
+      printf("error: -k requires -r to be present.\n");
+      printf("usage: ./bms -kr bms0\n");
+      return EXIT_FAILURE;
     }
   }
   printf("error: no command.\n");
@@ -857,6 +908,321 @@ int checklooprec_sub(Bm *bm0, Bm *bm2, char* str2, int depth, int lastcommand, e
   ret=checklooprec(bm0, bm2, depth-1, lastcommand, str2, ver, detail);
   return ret;
 }
+
+loopitem *checkloopnewrec(Bm *bm0, Bm *bm1, int maxdepth, eBMS_VER ver, int detail, int outputevery){
+  unsigned int L_size=1024;
+  loopitem *L=malloc(sizeof(loopitem)*L_size);
+  if(L==NULL){
+    printf("Error: Out of memory\n");
+    return NULL;
+  }
+  Bm **y_min_upper=malloc(sizeof(Bm*)*(maxdepth+1));
+  if(y_min_upper==NULL){
+    printf("Error: Out of memory\n");
+    if(L)free(L);
+    return NULL;
+  }
+  for(int i=0;i<=maxdepth;i++){
+    y_min_upper[i]=NULL;
+  }
+  loopitem *L_cur=L;
+  loopitem *L_end=L+(L_size-1);
+  L_cur->bm=clone(bm1);
+  L_cur->depth=maxdepth;
+  L_cur->str=bm2str(bm1);
+  L_cur->lastcommand=NONE;
+  Bm *x_max=clone(bm1);
+  Bm *y_min=clone(bm0);
+  unsigned int EXPAND_LIMIT=2;
+  unsigned int CUT_LIMIT=9;
+  long long unsigned int detaillinecount=0;
+  #define PRINT_DETAIL_STEPS(item){       \
+    if(detail){                           \
+      detaillinecount++;                  \
+      if(detaillinecount%outputevery==0){ \
+        printf("%s = ", item->str);       \
+        item->bm->bs=0;                   \
+        printbm(item->bm);                \
+        printf("\n");                     \
+      }                                   \
+    }                                     \
+  }
+  #define UPDATE_LOWER_BOUND(value){      \
+    if(y_min)free(y_min);                 \
+    y_min=value;                          \
+    if(detail){                           \
+      detaillinecount++;                  \
+      if(detaillinecount%outputevery==0){ \
+        printf("New lower bound = ");     \
+        y_min->bs=0;                      \
+        printbm(y_min);                   \
+        printf("\n");                     \
+      }                                   \
+    }                                     \
+  }
+  #define FREE_POPPED_CONTENT_EXCEPT_MATRIX(){ \
+    if(str)free(str);                          \
+  }
+  #define FREE_POPPED_CONTENT(){ \
+    if(str)free(str);            \
+    if(bm)free(bm);              \
+  }
+  #define FREE_EXCEPT_L(){                    \
+    if(x_max)free(x_max);                     \
+    if(y_min)free(y_min);                     \
+    for(int i=0;i<=maxdepth;i++){             \
+      if(y_min_upper[i])free(y_min_upper[i]); \
+    }                                         \
+    if(y_min_upper)free(y_min_upper);         \
+  }
+  #define FREE_AND_RETURN(return_value){                        \
+    for(loopitem *L_i=L;L_i<L_cur+(return_value!=L_cur);L_i++){ \
+      if(L_i->bm)free(L_i->bm);                                 \
+      if(L_i->str)free(L_i->str);                               \
+    }                                                           \
+    if(L)free(L);                                               \
+    FREE_EXCEPT_L();                                            \
+    return return_value;                                        \
+  }
+  while(L_cur>=L){
+    int fnext=0;
+    loopitem *x=L_cur;
+    Bm *bm=x->bm;
+    int depth=x->depth;
+    char *str=x->str;
+    commandType lastcommand=x->lastcommand;
+    if(checkloop(bm,ver,0)){
+      checkloop(bm,ver,1);
+      FREE_AND_RETURN(L_cur);
+    }
+    L_cur--;
+    if(depth){
+      int xs=bm->xs;
+      int ys=bm->ys;
+      if (y_min_upper[depth]!=NULL){
+        UPDATE_LOWER_BOUND(y_min_upper[depth]);
+        for(int i=0;i<depth;i++){
+          if(y_min_upper[i])free(y_min_upper[i]);
+          y_min_upper[i]=NULL;
+        }
+      }
+      y_min_upper[depth]=bm;
+      Bm *bm11=clone(bm);
+      bm11->bs=1;
+      bm11->b[0]=EXPAND_LIMIT;
+      Bm *bm2=expand(bm11,ver,0);
+      if(compmat(bm2,y_min)<=0){
+        if(bm2)free(bm2);
+        if(bm11)free(bm11);
+        FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+        continue;
+      }
+      if(movePointer(&L,&L_cur,&L_end,&L_size)==NULL){
+        if(bm2)free(bm2);
+        if(bm11)free(bm11);
+        FREE_EXCEPT_L();
+        return NULL;
+      }
+      L_cur->bm=bm2;
+      L_cur->depth=depth-1;
+      L_cur->str=malloc(strlen(str)+4);
+      sprintf(L_cur->str, "%s[%d]",str,EXPAND_LIMIT);
+      L_cur->lastcommand=EXPAND;
+      PRINT_DETAIL_STEPS(L_cur);
+      if(bm11)free(bm11);
+      // if(checkloop(bm2,ver,0)){
+      //   FREE_AND_RETURN(L_cur);
+      // }
+      int bplen=(bm2->xs-xs+1)/EXPAND_LIMIT;
+      if(bplen){
+        for(int k=EXPAND_LIMIT-1;k;k--){
+          bm2=clone(bm2);
+          bm2->xs=bm2->xs-bplen;
+          if(compmat(bm2,y_min)<=0){
+            if(bm2)free(bm2);
+            fnext=1;
+            FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+            break;
+          }
+          if(movePointer(&L,&L_cur,&L_end,&L_size)==NULL){
+            if(bm2)free(bm2);
+            FREE_EXCEPT_L();
+            return NULL;
+          }
+          L_cur->bm=bm2;
+          L_cur->depth=depth-1;
+          L_cur->str=malloc(strlen(str)+4);
+          sprintf(L_cur->str, "%s[%d]",str,k);
+          L_cur->lastcommand=EXPAND;
+          PRINT_DETAIL_STEPS(L_cur);
+          // if(checkloop(bm2,ver,0)){
+          //   FREE_AND_RETURN(L_cur);
+          // }
+        }
+        if(fnext)continue;
+        if(lastcommand!=REDUCE&&bm2->xs>=xs){
+          if(bm2->xs>xs){
+            bm2=clone(bm2);
+            bm2->xs=xs;
+            if(compmat(bm2,y_min)<=0){
+              if(bm2)free(bm2);
+              FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+              continue;
+            }
+            if(movePointer(&L,&L_cur,&L_end,&L_size)==NULL){
+              if(bm2)free(bm2);
+              FREE_EXCEPT_L();
+              return NULL;
+            }
+            L_cur->bm=clone(bm2);
+            L_cur->depth=depth-1;
+            L_cur->str=malloc(strlen(str)+10);
+            sprintf(L_cur->str, "%s<-1>",str);
+            L_cur->lastcommand=REDUCE;
+            PRINT_DETAIL_STEPS(L_cur);
+            // if(checkloop(bm2,ver,0)){
+            //   FREE_AND_RETURN(L_cur);
+            // }
+          }
+          int amount=1;
+          int isfound=0;
+          int *cc=malloc(sizeof(int)*ys);
+          do{
+            memcpy(cc,&bm2->m[(xs-1)*ys],sizeof(int)*ys);
+            isfound=0;
+            int lnz=ys-1;
+            while(lnz>=0){
+              if(cc[lnz]!=0){
+                isfound=1;
+                break;
+              }
+              lnz--;
+            }
+            int br=xs-1;
+            if(isfound){
+              while(--br>=0){
+                int yy=0;
+                while(yy<=lnz&&bm2->m[br*ys+yy]<cc[yy]){
+                  cc[yy]=bm2->m[br*ys+yy];
+                  yy++;
+                }
+                if(yy>lnz)break;
+              }
+              if(br<0)isfound=0;
+            }
+            if(isfound){
+              bm2=clone(bm2);
+              memcpy(&bm2->m[(xs-1)*ys+lnz],&bm2->m[br*ys+lnz],ys-lnz);
+              if(compmat(bm2,y_min)<=0){
+                if(bm2)free(bm2);
+                if(cc)free(cc);
+                fnext=1;
+                FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+                break;
+              }
+              if(movePointer(&L,&L_cur,&L_end,&L_size)==NULL){
+                if(bm2)free(bm2);
+                if(cc)free(cc);
+                FREE_EXCEPT_L();
+                return NULL;
+              }
+              L_cur->bm=bm2;
+              L_cur->depth=depth-1;
+              amount++;
+              L_cur->str=malloc(strlen(str)+10);
+              sprintf(L_cur->str, "%s<-%d>",str,amount);
+              L_cur->lastcommand=REDUCE;
+              PRINT_DETAIL_STEPS(L_cur);
+              // if(checkloop(bm2,ver,0)){
+              //   if(cc)free(cc);
+              //   FREE_AND_RETURN(L_cur);
+              // }
+            }
+          }while(isfound);
+          if(fnext)continue;
+          if(cc)free(cc);
+        }
+      }
+      if(lastcommand!=CUT){
+        if(bm2->xs>=xs){
+          bm2=clone(bm);
+          bm2->xs=xs-1;
+          if(compmat(bm2,y_min)<=0){
+            if(bm2)free(bm2);
+            FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+            continue;
+          }
+          if(movePointer(&L,&L_cur,&L_end,&L_size)==NULL){
+            if(bm2)free(bm2);
+            FREE_EXCEPT_L();
+            return NULL;
+          }
+          L_cur->bm=bm2;
+          L_cur->depth=depth-1;
+          L_cur->str=malloc(strlen(str)+6);
+          sprintf(L_cur->str, "%s[0]^1",str);
+          L_cur->lastcommand=CUT;
+          PRINT_DETAIL_STEPS(L_cur);
+          // if(checkloop(bm2,ver,0)){
+          //   FREE_AND_RETURN(L_cur);
+          // }
+        }
+        for(int i=2;i<=CUT_LIMIT;i++){
+          bm2=clone(bm2);
+          bm2->xs=bm2->xs-1;
+          if(compmat(bm2,y_min)<=0){
+            if(bm2)free(bm2);
+            fnext=1;
+            FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+            break;
+          }
+          if(movePointer(&L,&L_cur,&L_end,&L_size)==NULL){
+            if(bm2)free(bm2);
+            FREE_EXCEPT_L();
+            return NULL;
+          }
+          L_cur->bm=bm2;
+          L_cur->depth=depth-1;
+          L_cur->str=malloc(strlen(str)+6);
+          sprintf(L_cur->str, "%s[0]^%d",str,i);
+          L_cur->lastcommand=CUT;
+          PRINT_DETAIL_STEPS(L_cur);
+          // if(checkloop(bm2,ver,0)){
+          //   FREE_AND_RETURN(L_cur);
+          // }
+        }
+        if(fnext)continue;
+      }
+      FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+    }else{
+      UPDATE_LOWER_BOUND(bm);
+      FREE_POPPED_CONTENT_EXCEPT_MATRIX();
+    }
+  }
+  FREE_AND_RETURN(NULL);
+  #undef PRINT_DETAIL_STEPS
+  #undef UPDATE_LOWER_BOUND
+  #undef FREE_POPPED_CONTENT_EXCEPT_MATRIX
+  #undef FREE_POPPED_CONTENT
+  #undef FREE_EXCEPT_L
+  #undef FREE_AND_RETURN
+}
+loopitem *movePointer(loopitem **pL,loopitem **pL_cur,loopitem **pL_end,unsigned int *pL_size){
+  if(*pL_cur>=*pL_end){
+    *pL_size=*pL_size*2;
+    *pL=realloc(*pL,sizeof(loopitem)*(*pL_size));
+    if(*pL==NULL){
+      printf("Error: Out of memory\n");
+      return NULL;
+    }
+    *pL_cur=*pL+(*pL_size/2);
+    *pL_end=*pL+(*pL_size-1);
+  }else{
+    *pL_cur=(*pL_cur)+1;
+  }
+  return *pL;
+}
+
 void printcopyright(void){
   printf( "MIT License\n"
     "\n"
