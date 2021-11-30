@@ -244,6 +244,7 @@ int main(int argc, char **argv){
         printf("At %s = ",ret->str);
         ret->bm->bs=0;
         printbm(ret->bm);
+        printf("\n");
       }
       fflush(stdout);
       if(bm0)free(bm0);
@@ -251,7 +252,6 @@ int main(int argc, char **argv){
       if(ret){
         if(ret->bm)free(ret->bm);
         if(ret->str)free(ret->str);
-        free(ret);
       }
       return EXIT_SUCCESS;
     }else{
@@ -933,9 +933,9 @@ loopitem *checkloopnewrec(Bm *bm0, Bm *bm1, int maxdepth, eBMS_VER ver, int deta
   L_cur->lastcommand=NONE;
   Bm *x_max=clone(bm1);
   Bm *y_min=clone(bm0);
-  unsigned int EXPAND_LIMIT=2;
-  unsigned int CUT_LIMIT=9;
   long long unsigned int detaillinecount=0;
+  #define EXPAND_LIMIT (2)
+  #define CUT_LIMIT (9)
   #define PRINT_DETAIL_STEPS(item){       \
     if(detail){                           \
       detaillinecount++;                  \
@@ -1074,7 +1074,7 @@ loopitem *checkloopnewrec(Bm *bm0, Bm *bm1, int maxdepth, eBMS_VER ver, int deta
               FREE_EXCEPT_L();
               return NULL;
             }
-            L_cur->bm=clone(bm2);
+            L_cur->bm=bm2;
             L_cur->depth=depth-1;
             L_cur->str=malloc(strlen(str)+10);
             sprintf(L_cur->str, "%s<-1>",str);
@@ -1211,6 +1211,7 @@ loopitem *movePointer(loopitem **pL,loopitem **pL_cur,loopitem **pL_end,unsigned
   if(*pL_cur>=*pL_end){
     *pL_size=*pL_size*2;
     *pL=realloc(*pL,sizeof(loopitem)*(*pL_size));
+    printf("Expanding memory for the stack to %d\n",*pL_size);
     if(*pL==NULL){
       printf("Error: Out of memory\n");
       return NULL;
