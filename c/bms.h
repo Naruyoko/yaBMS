@@ -88,6 +88,7 @@ typedef struct{
   commandType lastcommand;
 }loopitem;
 
+int checkloopnew(Bm *b, eBMS_VER ver, int detail);
 /** @fn loopitem *checkloopnewrec(Bm *bm0, Bm *bm1, int maxdepth, eBMS_VER ver, int detail)
  * @brief Checks if the given matrix has a loop within the given range and depth.
  * 
@@ -100,4 +101,3 @@ typedef struct{
  * @return loopitem* the loopitem that caused the loop, or NULL if no loop was found or run out of memory
  */
 loopitem *checkloopnewrec(Bm *bm0, Bm *bm1, int maxdepth, eBMS_VER ver, int detail, int outputevery);
-loopitem *movePointer(loopitem **pL,loopitem **pL_cur,loopitem **pL_end,unsigned int *pL_size);
