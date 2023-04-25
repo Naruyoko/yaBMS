@@ -1,0 +1,33 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "gcc.exe - アクティブ ファイルのビルドとデバッグ",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+      "args": ["-krdv","1.1","(0,0,0)(1,1,1)(2,0,0)(1,1,0)(2,2,1)(3,0,0)(2,2,0)(3,1,1)(4,0,0)","(0,0,0)(1,1,1)(2,0,0)(1,1,0)(2,2,1)(3,0,0)(2,2,0)(3,3,1)(4,0,0)(5,1,1)","3"],
+      //"args": ["-kdr","(0,0,0)(1,1,1)","(0,0,0)(1,1,1)(2,2,2)","5"],
+      //"args": ["-kdr","(0,0,0)(1,1,1)","(0,0,0)(1,1,1)(2,2,2)","3"],
+      //"args": ["-dev","3.3","(0,0,0)(1,1,1)(2,2,1)(3,3,0)(4,4,1)(5,2,1)(4,4,1)(5,2,1)(4,4,1)[2]"],
+      //"args": ["-kdv","1.1","(0,0,0)(1,1,1)(2,0,0)(1,1,0)(2,2,1)(3,0,0)(2,2,0)(3,3,1)(4,0,0)(5,0,0)(3,0,0)"],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:\\ProgramData\\chocoportable\\bin\\gdb.exe",
+      "setupCommands": [
+        {
+          "description": "gdb の再フォーマットを有効にする",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "C/C++: gcc.exe アクティブなファイルのビルド"
+    }
+  ]
+}
